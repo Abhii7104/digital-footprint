@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Digital Footprint Visualizer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #0f172a;
+      color: #f1f5f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      color: #38bdf8;
+      margin-bottom: 10px;
+    }
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      margin: 10px;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 0 20px rgba(0, 200, 255, 0.1);
+    }
+    .title {
+      font-weight: bold;
+      color: #facc15;
+    }
+    .score {
+      font-size: 2rem;
+      margin: 20px 0;
+      color: #34d399;
+    }
+  </style>
+</head>
+<body>
+  <h1>🕵️ Digital Footprint Visualizer</h1>
+  <div class="card">
+    <div class="title">Device & Browser Info</div>
+    <div id="deviceInfo"></div>
+  </div>
+  <div class="card">
+    <div class="title">Permissions</div>
+    <div id="permissions"></div>
+  </div>
+  <div class="card">
+    <div class="title">Privacy Exposure Score</div>
+    <div class="score" id="score">Calculating...</div>
+  </div>
+
+  <script>
+    const deviceInfo = document.getElementById('deviceInfo');
+    const permissionsDiv = document.getElementById('permissions');
+    const scoreDisplay = document.getElementById('score');
+
+    function print(label, value) {
+      return `<p><strong>${label}:</strong> ${value}</p>`;
+    }
+
+    async function checkPermissions() {
+      const features = ['geolocation', 'notifications', 'camera', 'microphone'];
+      let grantedCount = 0;
+      for (const feature of features) {
+        try {
+          const status = await navigator.permissions.query({ name: feature });
+          permissionsDiv.innerHTML += print(feature, status.state);
+          if (status.state === 'granted') grantedCount++;
+        } catch (e) {
+          permissionsDiv.innerHTML += print(feature, 'not supported');
+        }
+      }
+      return grantedCount;
+    }
+
+    function calculateScore(detailsCount, grantedPermissions) {
+      let score = 100 - (detailsCount * 3 + grantedPermissions * 10);
+      return Math.max(score, 0);
+    }
+
+    function detectDeviceInfo() {
+      const info = {
+        Platform: navigator.platform,
+        UserAgent: navigator.userAgent,
+        Language: navigator.language,
+        CookiesEnabled: navigator.cookieEnabled,
+        ScreenSize: `${screen.width}x${screen.height}`,
+        TimeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      };
+      let count = 0;
+      for (let key in info) {
+        count++;
+        deviceInfo.innerHTML += print(key, info[key]);
+      }
+      return count;
+    }
+
+    (async function run() {
+      const detailsCount = detectDeviceInfo();
+      const grantedPermissions = await checkPermissions();
+      const score = calculateScore(detailsCount, grantedPermissions);
+      scoreDisplay.textContent = `${score}/100`;
+    })();
+  </script>
+</body>
+</html>
